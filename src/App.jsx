@@ -10,22 +10,23 @@ function Square({ value, onSquareClick }) {
     </button>
   );
 }
-function Board() {
-  const [squares, setSquares] = useState(Array.of(9).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
 
+function Board({ squares, xIsNext, onPlay, onReset }) {
   function handleClick(i) {
-    if (squares[i]) return;
-
+    if (squares[i] || calculateWinner(squares)) return;
     const nextSquares = squares.slice();
     if (xIsNext) {
       nextSquares[i] = "X";
     } else {
       nextSquares[i] = "O";
     }
-    setSquares(nextSquares);
-    setXIsNext((prev) => !prev);
+    onPlay(nextSquares);
   }
+
+  function handleReset() {
+    onReset();
+  }
+
   const winner = calculateWinner(squares);
   let status;
   if (winner) {
@@ -34,7 +35,7 @@ function Board() {
     status = "Next player is : " + (xIsNext ? "X" : "O");
   }
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-red-50">
+    <div>
       <div>{status}</div>
       <div className="flex">
         <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
@@ -51,9 +52,74 @@ function Board() {
         <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
         <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
       </div>
+      <button
+        className="bg-red-300 px-3 py-1 m-1 h-8 w-full rounded-full"
+        onClick={handleReset}
+      >
+        Reset
+      </button>
     </div>
   );
 }
+
+function Game() {
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [currentMove, setCurrentMove] = useState(0);
+  const currentSquares = history[currentMove];
+  const xIsNext = currentMove % 2 === 0;
+
+  function handlePlay(nextSquares) {
+    const nextHistory = [...history, nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove((prev) => prev + 1);
+  }
+
+  function handleReset() {
+    const nextHistory = [Array(9).fill(null)];
+    setHistory(nextHistory);
+    setCurrentMove(0);
+  }
+
+  function jumpTo(move) {
+    setCurrentMove(move);
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="bg-red-50 min-w-72 min-h-80 flex items-center justify-center">
+        <Board
+          squares={currentSquares}
+          xIsNext={xIsNext}
+          onPlay={handlePlay}
+          onReset={handleReset}
+        />
+      </div>
+      <div className=" bg-red-100 min-w-72 min-h-80 flex items-center justify-start">
+        <ul className="ml-5">
+          {history.map((_, move) => {
+            let description;
+            if (move > 0) {
+              description = "Go to move " + move;
+            } else {
+              description = "Start Game";
+            }
+            return (
+              <li key={move}>
+                <button
+                  className="bg-amber-50 px-2 py-1 my-0.5 w-full text-start rounded-sm text-sm"
+                  onClick={() => jumpTo(move)}
+                >
+                  {description}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function calculateWinner(squares) {
   const lines = [
     [0, 1, 2],
@@ -74,4 +140,4 @@ function calculateWinner(squares) {
   }
   return null;
 }
-export default Board;
+export default Game;
